@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #f0faf4;
+    --card: #ffffff;
+    --green: #16a34a;
+    --green-dark: #14532d;
+    --green-mid: #166534;
+    --green-light: #dcfce7;
+    --green-border: #86efac;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --red: #dc2626;
+    --red-l: #fee2e2;
+    --amber: #d97706;
+    --amber-l: #fef3c7;
+    --blue: #2563eb;
+    --blue-l: #dbeafe;
+    --purple: #7c3aed;
+    --purple-l: #ede9fe;
+    --orange: #ea580c;
+    --orange-l: #ffedd5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+    color: white; padding: 16px 16px 14px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 12px rgba(22,163,74,0.25);
+  }
+  .header-inner { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .header-icon { font-size: 28px; }
+  .header-title { font-size: 17px; font-weight: 800; line-height: 1.2; }
+  .header-sub { font-size: 11px; color: #86efac; margin-top: 1px; }
+  .header-count { margin-left: auto; text-align: right; background: rgba(255,255,255,0.12); border-radius: 12px; padding: 6px 12px; }
+  .header-count .num { font-size: 20px; font-weight: 800; }
+  .header-count .lbl { font-size: 10px; color: #86efac; }
+
+  /* Tabs */
+  .tabs { background: white; border-bottom: 1px solid var(--border); position: sticky; top: 68px; z-index: 99; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .tabs-inner { max-width: 640px; margin: 0 auto; display: flex; }
+  .tab-btn { flex: 1; padding: 10px 4px; border: none; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; border-bottom: 2px solid transparent; font-family: inherit; font-size: 11px; font-weight: 700; color: var(--muted); transition: all .2s; }
+  .tab-btn .emoji { font-size: 16px; }
+  .tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: #f0fdf4; }
+
+  /* Content */
+  .content { max-width: 640px; margin: 0 auto; padding: 14px; padding-bottom: 32px; }
+
+  /* Cards */
+  .card { background: white; border-radius: 18px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); margin-bottom: 10px; }
+  .card-label { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
+
+  /* Form controls */
+  .input, .select, .textarea {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 10px 12px; font-family: inherit; font-size: 14px; color: var(--text);
+    background: #fafafa; outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  .input:focus, .select:focus, .textarea:focus {
+    border-color: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,0.12); background: white;
+  }
+  .textarea { resize: none; }
+
+  /* Student grid */
+  .student-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .student-btn {
+    border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 12px;
+    background: #fafafa; cursor: pointer; text-align: left; font-family: inherit;
+    transition: all .15s; font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  .student-btn:hover { border-color: var(--green-border); background: var(--green-light); }
+  .student-btn.active { background: var(--green); color: white; border-color: var(--green); }
+  .student-btn.done { background: #f0fdf4; border-color: var(--green-border); color: var(--green-mid); }
+  .student-btn .s-pos { font-size: 10px; margin-top: 2px; opacity: 0.65; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .student-btn.active .s-pos { opacity: 0.75; }
+  .s-name-row { display: flex; align-items: center; justify-content: space-between; }
+
+  /* Status / Nilai buttons */
+  .btn-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill-btn {
+    padding: 7px 14px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: #f9fafb; cursor: pointer; font-family: inherit; font-size: 12px;
+    font-weight: 700; color: var(--muted); transition: all .15s;
+  }
+  .pill-btn:hover { border-color: #9ca3af; }
+  .pill-btn.active-lanjut { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  .pill-btn.active-ulang { background: var(--orange-l); color: var(--orange); border-color: #fdba74; }
+  .pill-btn.active-membaca { background: var(--blue-l); color: var(--blue); border-color: #93c5fd; }
+  .pill-btn.active-tasmi { background: var(--purple-l); color: var(--purple); border-color: #c4b5fd; }
+  .pill-btn.active-tidak { background: var(--red-l); color: var(--red); border-color: #fca5a5; }
+  .pill-btn.active-rasib { background: var(--red-l); color: var(--red); border-color: #fca5a5; }
+  .pill-btn.active-jayyid { background: var(--amber-l); color: var(--amber); border-color: #fcd34d; }
+  .pill-btn.active-jj { background: var(--blue-l); color: var(--blue); border-color: #93c5fd; }
+  .pill-btn.active-mumtaz { background: #dcfce7; color: #15803d; border-color: #86efac; }
+
+  /* Ayat row */
+  .ayat-row { display: grid; grid-template-columns: 1fr 28px 1fr; gap: 8px; align-items: end; }
+  .ayat-sep { text-align: center; color: #9ca3af; padding-bottom: 10px; font-size: 16px; font-weight: 700; }
+  .ayat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: block; }
+
+  /* Info box */
+  .info-box {
+    border-radius: 12px; padding: 10px 14px; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  }
+  .info-next { background: #f0fdf4; color: #15803d; }
+  .info-done { background: #fffbeb; color: #92400e; }
+  .info-repeat { background: #eff6ff; color: #1e40af; }
+
+  /* Ayat counter */
+  .ayat-count-box { background: #f0fdf4; border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .ayat-count-main { font-size: 14px; font-weight: 800; color: var(--green); }
+  .ayat-count-pct { font-size: 12px; color: #4ade80; font-weight: 600; }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%; background: var(--green); color: white; border: none; border-radius: 16px;
+    padding: 16px; font-family: inherit; font-size: 16px; font-weight: 800;
+    cursor: pointer; transition: all .15s; box-shadow: 0 4px 14px rgba(22,163,74,0.3);
+    margin-top: 4px;
+  }
+  .submit-btn:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(22,163,74,0.35); }
+  .submit-btn:active { transform: scale(0.98); }
+
+  /* Record items */
+  .rec-item { background: white; border-radius: 16px; padding: 14px; box-shadow: 0 1px 5px rgba(0,0,0,0.06); margin-bottom: 8px; }
+  .rec-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .rec-name { font-weight: 800; font-size: 14px; }
+  .rec-sub { font-size: 13px; color: #374151; margin-top: 3px; }
+  .rec-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .del-btn { border: none; background: none; cursor: pointer; color: #d1d5db; font-size: 16px; padding: 2px; transition: color .15s; flex-shrink: 0; }
+  .del-btn:hover { color: var(--red); }
+
+  /* Tags */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .tag-lanjut { background: #dcfce7; color: #15803d; }
+  .tag-ulang { background: var(--orange-l); color: var(--orange); }
+  .tag-membaca { background: var(--blue-l); color: var(--blue); }
+  .tag-tasmi { background: var(--purple-l); color: var(--purple); }
+  .tag-tidak { background: var(--red-l); color: var(--red); }
+  .tag-rasib { background: var(--red-l); color: var(--red); }
+  .tag-jayyid { background: var(--amber-l); color: var(--amber); }
+  .tag-jj { background: var(--blue-l); color: var(--blue); }
+  .tag-mumtaz { background: #dcfce7; color: #15803d; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 10px; }
+  .filter-bar .select { flex: 1; }
+  .filter-date-wrap { display: flex; gap: 4px; align-items: center; }
+  .clear-btn { border: none; background: #f3f4f6; color: #6b7280; border-radius: 10px; padding: 0 10px; cursor: pointer; font-size: 13px; font-family: inherit; height: 42px; }
+
+  /* Laporan */
+  .week-nav { display: flex; align-items: center; justify-content: space-between; background: white; border-radius: 16px; padding: 12px 16px; box-shadow: 0 1px 5px rgba(0,0,0,0.06); margin-bottom: 10px; }
+  .week-nav-btn { border: none; background: #f3f4f6; border-radius: 10px; width: 36px; height: 36px; cursor: pointer; font-size: 14px; transition: background .15s; }
+  .week-nav-btn:hover { background: var(--green-light); }
+  .week-label { font-size: 13px; font-weight: 700; color: var(--text); text-align: center; }
+
+  .lap-card { background: white; border-radius: 18px; padding: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); margin-bottom: 8px; }
+  .lap-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .lap-name { font-weight: 800; font-size: 14px; }
+  .lap-total { font-size: 13px; font-weight: 700; color: var(--green); }
+
+  .day-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 8px; }
+  .day-cell-label { font-size: 9px; color: var(--muted); text-align: center; font-weight: 700; margin-bottom: 3px; }
+  .day-cell {
+    border-radius: 8px; height: 32px; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; cursor: default;
+  }
+  .day-cell.empty { background: #f9fafb; color: #d1d5db; }
+  .day-cell.lanjut { background: #dcfce7; color: #15803d; }
+  .day-cell.ulang { background: var(--orange-l); color: var(--orange); }
+  .day-cell.membaca { background: var(--blue-l); color: var(--blue); }
+  .day-cell.tasmi { background: var(--purple-l); color: var(--purple); }
+  .day-cell.tidak { background: var(--red-l); color: var(--red); }
+
+  .day-detail { font-size: 11px; color: #374151; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+  .day-detail .day-name { color: var(--muted); font-weight: 700; width: 36px; flex-shrink: 0; }
+
+  /* Stat */
+  .podium { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .podium-card { border-radius: 16px; padding: 14px 8px; text-align: center; border: 2px solid; }
+  .podium-card.gold { background: #fffbeb; border-color: #fcd34d; }
+  .podium-card.silver { background: #f9fafb; border-color: #e5e7eb; }
+  .podium-card.bronze { background: #fff7ed; border-color: #fdba74; }
+  .podium-emoji { font-size: 22px; }
+  .podium-name { font-size: 12px; font-weight: 800; margin-top: 4px; }
+  .podium-ayat { font-size: 18px; font-weight: 800; color: var(--green); }
+  .podium-lbl { font-size: 10px; color: var(--muted); }
+
+  .progress-wrap { background: white; border-radius: 18px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); margin-bottom: 10px; }
+  .progress-row { margin-bottom: 10px; }
+  .progress-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .progress-name { font-weight: 700; }
+  .progress-val { font-weight: 800; color: var(--green); }
+  .progress-bar { height: 8px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #16a34a, #4ade80); border-radius: 99px; transition: width .5s; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { background: white; border-radius: 16px; padding: 12px; box-shadow: 0 1px 5px rgba(0,0,0,0.06); }
+  .stat-sname { font-weight: 800; font-size: 13px; margin-bottom: 2px; }
+  .stat-pos { font-size: 11px; color: var(--muted); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat-mini-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .stat-mini { border-radius: 10px; padding: 6px 4px; text-align: center; }
+  .stat-mini .val { font-size: 13px; font-weight: 800; }
+  .stat-mini .lbl { font-size: 9px; color: var(--muted); }
+  .stat-mini.green { background: #f0fdf4; }
+  .stat-mini.orange { background: #fff7ed; }
+  .stat-mini.yellow { background: #fffbeb; }
+  .stat-mini.green .val { color: var(--green); }
+  .stat-mini.orange .val { color: var(--orange); }
+  .stat-mini.yellow .val { color: var(--amber); }
+
+  .alert-box { background: #fef2f2; border-radius: 16px; padding: 14px; border: 1px solid #fecaca; margin-bottom: 10px; }
+  .alert-title { font-size: 13px; font-weight: 800; color: var(--red); margin-bottom: 8px; }
+  .alert-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .alert-tag { font-size: 11px; font-weight: 700; background: white; color: var(--red); border: 1px solid #fecaca; padding: 3px 10px; border-radius: 20px; }
+
+  /* Summary cards */
+  .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .ov-card { border-radius: 16px; padding: 14px; text-align: center; }
+  .ov-card.g1 { background: linear-gradient(135deg, #15803d, #16a34a); color: white; }
+  .ov-card.g2 { background: linear-gradient(135deg, #166534, #15803d); color: white; }
+  .ov-num { font-size: 26px; font-weight: 800; }
+  .ov-lbl { font-size: 11px; opacity: .8; }
+
+  .export-btn {
+    width: 100%; background: linear-gradient(135deg, #15803d, #16a34a); color: white;
+    border: none; border-radius: 16px; padding: 16px; font-family: inherit;
+    font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(22,163,74,0.3);
+    transition: all .15s; margin-top: 8px;
+  }
+  .export-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(22,163,74,0.35); }
+
+  /* Toast */
+  .toast {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+    z-index: 999; padding: 12px 20px; border-radius: 16px; font-size: 13px;
+    font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.15); white-space: nowrap;
+    animation: slideIn .25s ease;
+  }
+  .toast.success { background: #15803d; color: white; }
+  .toast.error { background: var(--red); color: white; }
+  .toast.info { background: #1e40af; color: white; }
+  @keyframes slideIn { from { top: -10px; opacity:0 } to { top:14px; opacity:1 } }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 998;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal { background: white; border-radius: 24px; padding: 24px; max-width: 300px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal-emoji { font-size: 36px; margin-bottom: 8px; }
+  .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .modal-btns { display: flex; gap: 8px; }
+  .modal-btns button { flex: 1; padding: 12px; border-radius: 12px; border: none; font-family: inherit; font-weight: 700; cursor: pointer; font-size: 14px; }
+  .btn-cancel { background: #f3f4f6; color: #374151; }
+  .btn-delete { background: var(--red); color: white; }
+
+  .copy-wa-btn {
+    width: 100%; background: linear-gradient(135deg, #16a34a, #15803d); color: white;
+    border: none; border-radius: 16px; padding: 14px; font-family: inherit;
+    font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(22,163,74,0.25);
+    transition: all .15s; margin-bottom: 12px;
+  }
+  .copy-wa-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(22,163,74,0.35); }
+  .copy-wa-btn:active { transform: scale(0.98); }
+
+  /* Setup overlay */
+  .setup-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .setup-box {
+    background: white; border-radius: 24px; padding: 28px 24px; max-width: 420px;
+    width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .setup-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; color: var(--text); }
+  .setup-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+  .setup-step {
+    background: #f8fafc; border-radius: 14px; padding: 14px; margin-bottom: 12px;
+    border-left: 4px solid var(--green);
+  }
+  .setup-step-num { font-size: 10px; font-weight: 800; color: var(--green); text-transform: uppercase; letter-spacing: .08em; }
+  .setup-step-text { font-size: 13px; color: var(--text); margin-top: 4px; line-height: 1.6; }
+  .setup-step-text a { color: var(--green); font-weight: 700; }
+  .setup-step-text code { background: #e5e7eb; border-radius: 6px; padding: 1px 6px; font-size: 12px; font-family: monospace; }
+  .setup-textarea {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 12px;
+    font-family: monospace; font-size: 12px; resize: vertical; min-height: 120px;
+    outline: none; margin-bottom: 12px; color: var(--text); background: #fafafa;
+    transition: border-color .2s;
+  }
+  .setup-textarea:focus { border-color: var(--green); background: white; }
+  .setup-save-btn {
+    width: 100%; background: var(--green); color: white; border: none; border-radius: 14px;
+    padding: 14px; font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
+    transition: all .15s; box-shadow: 0 4px 14px rgba(22,163,74,0.3);
+  }
+  .setup-save-btn:hover { background: #15803d; }
+  .setup-error { color: var(--red); font-size: 12px; font-weight: 700; margin-top: 8px; display: none; }
+  .conn-indicator {
+    display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;
+    padding: 6px 12px; border-radius: 20px; margin-left: auto;
+  }
+  .conn-indicator.online { background: rgba(255,255,255,0.15); color: #bbf7d0; }
+  .conn-indicator.offline { background: rgba(255,0,0,0.2); color: #fca5a5; }
+  .conn-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .conn-indicator.online .conn-dot { background: #4ade80; box-shadow: 0 0 0 2px rgba(74,222,128,0.3); }
+  .conn-indicator.offline .conn-dot { background: #f87171; }
+
+  /* Hidden */
+  .hidden { display: none !important; }
+
+  /* Section title */
+  .sec-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .sec-badge { font-size: 11px; font-weight: 700; background: #fef2f2; color: var(--red); padding: 3px 10px; border-radius: 20px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-state .emoji { font-size: 48px; margin-bottom: 8px; }
+  .count-note { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- Setup Overlay (tampil kalau Firebase belum dikonfigurasi) -->
+<div id="setup-overlay" class="setup-overlay" style="display:none;">
+  <div class="setup-box">
+    <div style="font-size:36px;margin-bottom:10px;">🔧</div>
+    <div class="setup-title">Konfigurasi Firebase</div>
+    <div class="setup-sub">Supaya data tersimpan online dan bisa diakses bersama, perlu menghubungkan ke Firebase (gratis). Ikuti langkah berikut:</div>
+
+    <div class="setup-step">
+      <div class="setup-step-num">Langkah 1</div>
+      <div class="setup-step-text">Buka <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Buat project baru → pilih nama bebas.</div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">Langkah 2</div>
+      <div class="setup-step-text">Di project, klik <b>Firestore Database</b> → <b>Create database</b> → pilih mode <code>test mode</code> → pilih region terdekat.</div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">Langkah 3</div>
+      <div class="setup-step-text">Klik ikon ⚙️ → <b>Project settings</b> → scroll ke bawah → klik <b>&lt;/&gt;</b> (Web app) → daftarkan app → salin bagian <code>firebaseConfig</code> dan paste di bawah ini:</div>
+    </div>
+
+    <textarea class="setup-textarea" id="setup-input" placeholder='{
+  "apiKey": "AIza...",
+  "authDomain": "project.firebaseapp.com",
+  "projectId": "project-id",
+  "storageBucket": "project.appspot.com",
+  "messagingSenderId": "12345",
+  "appId": "1:12345:web:abcdef"
+}'></textarea>
+    <div class="setup-error" id="setup-error">❌ Format tidak valid. Pastikan paste JSON dari firebaseConfig yang benar.</div>
+    <button class="setup-save-btn" onclick="saveFirebaseConfig()">🚀 Simpan & Mulai</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- Delete Modal -->
+<div id="modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-emoji">🗑️</div>
+    <div class="modal-title">Hapus Catatan?</div>
+    <div class="modal-sub">Tindakan ini tidak bisa dibatalkan.</div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Batal</button>
+      <button class="btn-delete" onclick="confirmDelete()">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-icon">📖</div>
+    <div>
+      <div class="header-title">Mutabaah Tahfidz</div>
+      <div class="header-sub" id="header-date">Kelas 3</div>
+    </div>
+    <div class="header-count">
+      <div class="num"><span id="header-count">0</span><span style="font-size:13px;opacity:.5">/26</span></div>
+      <div class="lbl">input hari ini</div>
+    </div>
+    <div id="conn-indicator" class="conn-indicator offline" title="Status koneksi database">
+      <div class="conn-dot"></div><span id="conn-text">...</span>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="switchTab('input')" id="tab-input">
+      <span class="emoji">✏️</span><span>Input</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('riwayat')" id="tab-riwayat">
+      <span class="emoji">📋</span><span>Riwayat</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('laporan')" id="tab-laporan">
+      <span class="emoji">📊</span><span>Laporan</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('stat')" id="tab-stat">
+      <span class="emoji">🏆</span><span>Statistik</span>
+    </button>
+  </div>
+</div>
+
+<!-- ─── INPUT TAB ─────────────────────────────────────────────── -->
+<div id="view-input" class="content">
+  <div class="sec-title">Input Setoran Harian <span id="not-today-badge" class="sec-badge hidden"></span></div>
+
+  <!-- Tanggal -->
+  <div class="card">
+    <span class="card-label">📅 Tanggal</span>
+    <input type="date" id="inp-date" class="input" />
+  </div>
+
+  <!-- Siswa -->
+  <div class="card">
+    <span class="card-label">👤 Pilih Siswa</span>
+    <div class="student-grid" id="student-grid"></div>
+  </div>
+
+  <!-- Auto info -->
+  <div id="auto-info" class="info-box hidden"></div>
+
+  <!-- Form (shown after student selected) -->
+  <div id="form-section" class="hidden">
+    <!-- Status -->
+    <div class="card">
+      <span class="card-label">📌 Status Setoran</span>
+      <div class="btn-group" id="status-group"></div>
+    </div>
+
+    <!-- Surah & Ayat -->
+    <div class="card" id="surah-section">
+      <span class="card-label">📖 Surat & Ayat</span>
+      <select id="inp-surah" class="select" style="margin-bottom:10px;" onchange="updateAyatInfo()"></select>
+      <div class="ayat-row">
+        <div>
+          <span class="ayat-label">Ayat Awal</span>
+          <input type="number" id="inp-from" class="input" min="1" value="1" oninput="updateAyatInfo()" style="text-align:center;" />
+        </div>
+        <div class="ayat-sep">—</div>
+        <div>
+          <span class="ayat-label">Ayat Akhir</span>
+          <input type="number" id="inp-to" class="input" min="1" value="1" oninput="updateAyatInfo()" style="text-align:center;" />
+        </div>
+      </div>
+      <div id="ayat-count-box" class="ayat-count-box hidden">
+        <span id="ayat-count" class="ayat-count-main"></span>
+        <span id="ayat-pct" class="ayat-count-pct"></span>
+      </div>
+    </div>
+
+    <!-- Nilai -->
+    <div class="card" id="nilai-section">
+      <span class="card-label">⭐ Nilai</span>
+      <div class="btn-group" id="nilai-group"></div>
+    </div>
+
+    <!-- Catatan -->
+    <div class="card">
+      <span class="card-label">📝 Catatan (opsional)</span>
+      <textarea id="inp-catatan" class="textarea" rows="2" placeholder="Tambahkan catatan..."></textarea>
+    </div>
+
+    <button class="submit-btn" onclick="submitSetoran()">💾 Simpan Setoran</button>
+  </div>
+</div>
+
+<!-- ─── RIWAYAT TAB ─────────────────────────────────────────────── -->
+<div id="view-riwayat" class="content hidden">
+  <div class="sec-title">Riwayat Setoran</div>
+  <div class="filter-bar">
+    <select id="filter-student" class="select" onchange="renderRiwayat()" style="max-width:160px;">
+      <option value="Semua">Semua Siswa</option>
+    </select>
+    <div class="filter-date-wrap" style="flex:1;">
+      <input type="date" id="filter-date" class="input" onchange="renderRiwayat()" />
+      <button class="clear-btn" onclick="clearDateFilter()">✕</button>
+    </div>
+  </div>
+  <div id="riwayat-count" class="count-note"></div>
+  <div id="copy-wa-wrap"></div>
+  <div id="riwayat-list"></div>
+</div>
+
+<!-- ─── LAPORAN TAB ─────────────────────────────────────────────── -->
+<div id="view-laporan" class="content hidden">
+  <div class="sec-title">Laporan Mingguan</div>
+  <div class="week-nav">
+    <button class="week-nav-btn" onclick="shiftWeek(-1)">◀</button>
+    <div class="week-label" id="week-label"></div>
+    <button class="week-nav-btn" onclick="shiftWeek(1)">▶</button>
+  </div>
+  <div class="overview-grid" id="lap-overview"></div>
+  <div id="lap-list"></div>
+  <button class="export-btn" onclick="exportExcel()">
+    📥 Export Excel / CSV
+  </button>
+</div>
+
+<!-- ─── STATISTIK TAB ─────────────────────────────────────────────── -->
+<div id="view-stat" class="content hidden">
+  <div class="sec-title">Statistik & Progress</div>
+  <div id="stat-alert"></div>
+  <div id="stat-podium" class="podium"></div>
+  <div class="progress-wrap" id="stat-progress"></div>
+  <div class="stat-grid" id="stat-grid"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const STUDENTS = [
+  "Zaidan","Yudha","Hisan","Fauzan","Hanif",
+  "Adzkan","Mizan","Fari","Salman","Labib",
+  "Raihan","Alby","Al Fath","Ibrahim",
+  "Anjani","Ayya","Romeesa","Tissa","Lody",
+  "Aqilla","Aisyah","Balqis","Lili","Alisya",
+  "Asiyah","Adhwa"
+];
+
+const SURAHS = [
+  {no:14,name:"Ibrahim",ayat:52},
+  {no:48,name:"Al Fath",ayat:29},
+  {no:55,name:"Ar Rahman",ayat:78},
+  {no:56,name:"Al Waqi'ah",ayat:96},
+  {no:67,name:"Al Mulk",ayat:30},
+  {no:68,name:"Al Qalam",ayat:52},
+  {no:69,name:"Al Haqqah",ayat:52},
+  {no:70,name:"Al Ma'arij",ayat:44},
+  {no:71,name:"Nuh",ayat:28},
+  {no:72,name:"Al Jin",ayat:28},
+  {no:73,name:"Al Muzzammil",ayat:20},
+  {no:74,name:"Al Muddatsir",ayat:56},
+  {no:75,name:"Al Qiyamah",ayat:40},
+  {no:76,name:"Al Insan",ayat:31},
+  {no:77,name:"Al Mursalat",ayat:50},
+  {no:78,name:"An Naba",ayat:40},
+  {no:79,name:"An Nazi'at",ayat:46},
+  {no:80,name:"Abasa",ayat:42},
+  {no:81,name:"At Takwir",ayat:29},
+  {no:82,name:"Al Infitar",ayat:19},
+  {no:83,name:"Al Mutaffifin",ayat:36},
+  {no:84,name:"Al Insyiqaq",ayat:25},
+  {no:85,name:"Al Buruj",ayat:22},
+  {no:86,name:"At Tariq",ayat:17},
+  {no:87,name:"Al A'la",ayat:19},
+  {no:88,name:"Al Ghasyiyah",ayat:26},
+  {no:89,name:"Al Fajr",ayat:30},
+  {no:90,name:"Al Balad",ayat:20},
+  {no:91,name:"Asy Syams",ayat:15},
+  {no:92,name:"Al Lail",ayat:21},
+  {no:93,name:"Ad Dhuha",ayat:11},
+  {no:94,name:"Al Insyirah",ayat:8},
+  {no:95,name:"At Tin",ayat:8},
+  {no:96,name:"Al Alaq",ayat:19},
+  {no:97,name:"Al Qadr",ayat:5},
+  {no:98,name:"Al Bayyinah",ayat:8},
+  {no:99,name:"Az Zalzalah",ayat:8},
+  {no:100,name:"Al Adiyat",ayat:11},
+  {no:101,name:"Al Qari'ah",ayat:11},
+  {no:102,name:"At Takatsur",ayat:8},
+  {no:103,name:"Al Asr",ayat:3},
+  {no:104,name:"Al Humazah",ayat:9},
+  {no:105,name:"Al Fil",ayat:5},
+  {no:106,name:"Quraisy",ayat:4},
+  {no:107,name:"Al Ma'un",ayat:7},
+  {no:108,name:"Al Kautsar",ayat:3},
+  {no:109,name:"Al Kafirun",ayat:6},
+  {no:110,name:"An Nasr",ayat:3},
+  {no:111,name:"Al Masad",ayat:5},
+  {no:112,name:"Al Ikhlas",ayat:4},
+  {no:113,name:"Al Falaq",ayat:5},
+  {no:114,name:"An Nas",ayat:6},
+];
+
+const NILAI = ["Rasib","Jayyid","Jayyid Jiddan","Mumtaz"];
+const STATUS = ["Lanjut","Ulang","Membaca","Tasmi","Tidak Setoran"];
+const DAYS = ["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Ahad"];
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let records = [];
+let currentStudent = "";
+let currentStatus = "Lanjut";
+let currentNilai = "Jayyid";
+let currentTab = "input";
+let weekStart = getMondayStr(new Date());
+let pendingDeleteId = null;
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function todayStr() { return new Date().toISOString().split("T")[0]; }
+
+function getMondayStr(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return d.toISOString().split("T")[0];
+}
+
+function getWeekDates(mondayStr) {
+  const m = new Date(mondayStr + "T00:00:00");
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(m); d.setDate(m.getDate()+i);
+    return d.toISOString().split("T")[0];
+  });
+}
+
+function fmtDate(str) {
+  if (!str) return "";
+  const d = new Date(str + "T00:00:00");
+  return d.toLocaleDateString("id-ID",{weekday:"short",day:"numeric",month:"short"});
+}
+
+function fmtDateLong(str) {
+  if (!str) return "";
+  const d = new Date(str + "T00:00:00");
+  return d.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+}
+
+function statusClass(s) {
+  const map = {"Lanjut":"lanjut","Ulang":"ulang","Membaca":"membaca","Tasmi":"tasmi","Tidak Setoran":"tidak"};
+  return map[s]||"";
+}
+
+function nilaiClass(n) {
+  const map = {"Rasib":"rasib","Jayyid":"jayyid","Jayyid Jiddan":"jj","Mumtaz":"mumtaz"};
+  return map[n]||"";
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FIREBASE SETUP
+// ═══════════════════════════════════════════════════════════════
+const FB_CONFIG_KEY = "mutabaah-firebase-config";
+const COL = "mutabaah_kelas3";
+let db = null;
+let unsubscribe = null;
+
+function getStoredConfig() {
+  try { return JSON.parse(localStorage.getItem(FB_CONFIG_KEY)); }
+  catch(e) { return null; }
+}
+
+function saveFirebaseConfig() {
+  const raw = document.getElementById("setup-input").value.trim();
+  const errEl = document.getElementById("setup-error");
+  errEl.style.display = "none";
+  try {
+    // Hapus "const firebaseConfig = " kalau ada, ambil object JSON-nya saja
+    let cleaned = raw
+      .replace(/^(const|var|let)\s+\w+\s*=\s*/, "")
+      .replace(/;?\s*$/, "")
+      .trim();
+    // Konversi JS object ke JSON (tambah tanda kutip ke key yang belum ada)
+    cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z_]\w*)\s*:/g, '$1"$2":');
+    const cfg = JSON.parse(cleaned);
+    if (!cfg.apiKey || !cfg.projectId) throw new Error("Invalid");
+    localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg));
+    document.getElementById("setup-overlay").style.display = "none";
+    initFirebase(cfg);
+  } catch(e) {
+    errEl.style.display = "block";
+  }
+}
+
+function setConnStatus(online) {
+  const el = document.getElementById("conn-indicator");
+  const txt = document.getElementById("conn-text");
+  el.className = `conn-indicator ${online ? "online" : "offline"}`;
+  txt.textContent = online ? "Online" : "Offline";
+}
+
+function initFirebase(config) {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    db = firebase.firestore();
+    // Aktifkan persistence supaya ada cache offline
+    db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+    startListener();
+  } catch(e) {
+    showToast("Gagal konek Firebase. Cek config.", "error");
+    setConnStatus(false);
+  }
+}
+
+function startListener() {
+  if (unsubscribe) unsubscribe();
+  setConnStatus(false);
+  unsubscribe = db.collection(COL).onSnapshot(
+    snapshot => {
+      records = snapshot.docs.map(d => ({ ...d.data(), _docId: d.id }));
+      setConnStatus(true);
+      refreshAll();
+    },
+    err => {
+      console.error("Firestore error:", err);
+      setConnStatus(false);
+      showToast("Koneksi terputus, cek internet.", "error");
+    }
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STORAGE (CRUD ke Firestore)
+// ═══════════════════════════════════════════════════════════════
+async function loadData() {
+  // Data sudah di-load via onSnapshot listener — fungsi ini hanya placeholder
+}
+
+async function saveData(rec) {
+  if (!db) return;
+  try {
+    await db.collection(COL).doc(String(rec.id)).set(rec);
+  } catch(e) {
+    showToast("Gagal simpan data!", "error");
+    console.error(e);
+  }
+}
+
+async function deleteData(id) {
+  if (!db) return;
+  try {
+    await db.collection(COL).doc(String(id)).delete();
+  } catch(e) {
+    showToast("Gagal hapus data!", "error");
+    console.error(e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+function showToast(msg, type="success") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `toast ${type}`;
+  el.classList.remove("hidden");
+  setTimeout(() => el.classList.add("hidden"), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DELETE MODAL
+// ═══════════════════════════════════════════════════════════════
+function openModal(id) {
+  pendingDeleteId = id;
+  document.getElementById("modal").classList.remove("hidden");
+}
+function closeModal() {
+  pendingDeleteId = null;
+  document.getElementById("modal").classList.add("hidden");
+}
+async function confirmDelete() {
+  const idToDelete = pendingDeleteId;
+  closeModal();
+  records = records.filter(r => r.id !== idToDelete);
+  await deleteData(idToDelete);
+  showToast("Catatan dihapus.","info");
+  refreshAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById(`tab-${tab}`).classList.add("active");
+  ["input","riwayat","laporan","stat"].forEach(t => {
+    document.getElementById(`view-${t}`).classList.toggle("hidden", t !== tab);
+  });
+  if (tab === "riwayat") renderRiwayat();
+  if (tab === "laporan") renderLaporan();
+  if (tab === "stat") renderStat();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT FORM
+// ═══════════════════════════════════════════════════════════════
+function initForm() {
+  // Date
+  document.getElementById("inp-date").value = todayStr();
+
+  // Header date
+  document.getElementById("header-date").textContent = `Kelas 3 · ${fmtDateLong(todayStr())}`;
+
+  // Students
+  renderStudentGrid();
+
+  // Status buttons
+  const sg = document.getElementById("status-group");
+  STATUS.forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = `pill-btn ${currentStatus === s ? "active-"+statusClass(s) : ""}`;
+    btn.textContent = s;
+    btn.id = `status-btn-${statusClass(s)}`;
+    btn.onclick = () => pickStatus(s);
+    sg.appendChild(btn);
+  });
+
+  // Nilai buttons
+  const ng = document.getElementById("nilai-group");
+  NILAI.forEach(n => {
+    const btn = document.createElement("button");
+    btn.className = `pill-btn ${currentNilai === n ? "active-"+nilaiClass(n) : ""}`;
+    btn.textContent = n;
+    btn.id = `nilai-btn-${nilaiClass(n)}`;
+    btn.onclick = () => pickNilai(n);
+    ng.appendChild(btn);
+  });
+
+  // Surah select
+  const sel = document.getElementById("inp-surah");
+  sel.innerHTML = '<option value="">-- Pilih Surat --</option>';
+  SURAHS.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s.name;
+    opt.textContent = `${s.no}. ${s.name} (${s.ayat} ayat)`;
+    sel.appendChild(opt);
+  });
+
+  // Filter students
+  const fs = document.getElementById("filter-student");
+  STUDENTS.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s; opt.textContent = s;
+    fs.appendChild(opt);
+  });
+}
+
+function renderStudentGrid() {
+  const today = document.getElementById("inp-date").value || todayStr();
+  const grid = document.getElementById("student-grid");
+  grid.innerHTML = "";
+  const notToday = [];
+  STUDENTS.forEach(s => {
+    const last = getLastRec(s);
+    const done = records.find(r => r.student===s && r.tanggal===today);
+    if (!done) notToday.push(s);
+    const btn = document.createElement("button");
+    btn.className = `student-btn ${currentStudent===s?"active":done?"done":""}`;
+    btn.innerHTML = `
+      <div class="s-name-row">
+        <span>${s}</span>
+        ${done && currentStudent!==s ? '<span>✓</span>' : ''}
+      </div>
+      <span class="s-pos">${last&&last.surah!=="-"?last.surah+" :"+last.ayatTo:"–"}</span>
+    `;
+    btn.onclick = () => pickStudent(s);
+    grid.appendChild(btn);
+  });
+
+  // Badge
+  const badge = document.getElementById("not-today-badge");
+  if (notToday.length > 0) {
+    badge.textContent = `⚠️ ${notToday.length} belum input`;
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+
+  // Header count
+  const todayCount = records.filter(r=>r.tanggal===today).length;
+  document.getElementById("header-count").textContent = todayCount;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STUDENT PICK & AUTO-FILL
+// ═══════════════════════════════════════════════════════════════
+function getLastRec(s) {
+  return [...records].filter(r=>r.student===s).sort((a,b)=>b.id-a.id)[0]||null;
+}
+
+function getLastActualRec(s) {
+  return [...records].filter(r=>r.student===s&&r.status!=="Tidak Setoran").sort((a,b)=>b.id-a.id)[0]||null;
+}
+
+function pickStudent(s) {
+  if (currentStudent === s) {
+    currentStudent = "";
+    document.getElementById("form-section").classList.add("hidden");
+    document.getElementById("auto-info").classList.add("hidden");
+    renderStudentGrid();
+    return;
+  }
+  currentStudent = s;
+  renderStudentGrid();
+
+  const lastActual = getLastActualRec(s);
+  const last = getLastRec(s);
+  const autoInfo = document.getElementById("auto-info");
+
+  // Default form
+  currentStatus = "Lanjut";
+  currentNilai = "Jayyid";
+  renderStatusButtons();
+  renderNilaiButtons();
+  document.getElementById("inp-catatan").value = "";
+
+  if (!lastActual) {
+    // New student
+    document.getElementById("inp-surah").value = "";
+    document.getElementById("inp-from").value = 1;
+    document.getElementById("inp-to").value = 1;
+    autoInfo.classList.add("hidden");
+  } else if (last && last.status === "Lanjut") {
+    // Continue from next ayat
+    const sd = SURAHS.find(x=>x.name===lastActual.surah);
+    if (sd && lastActual.ayatTo < sd.ayat) {
+      const next = lastActual.ayatTo + 1;
+      document.getElementById("inp-surah").value = lastActual.surah;
+      document.getElementById("inp-from").value = next;
+      document.getElementById("inp-to").value = next;
+      autoInfo.className = "info-box info-next";
+      autoInfo.innerHTML = `✨ Lanjut dari <b>${lastActual.surah}</b> ayat <b>${next}</b>`;
+      autoInfo.classList.remove("hidden");
+    } else {
+      // Surah complete
+      document.getElementById("inp-surah").value = "";
+      document.getElementById("inp-from").value = 1;
+      document.getElementById("inp-to").value = 1;
+      autoInfo.className = "info-box info-done";
+      autoInfo.innerHTML = `🎉 <b>${lastActual.surah}</b> sudah selesai! Silakan pilih surat baru.`;
+      autoInfo.classList.remove("hidden");
+    }
+  } else if (last && last.status === "Ulang") {
+    document.getElementById("inp-surah").value = lastActual.surah;
+    document.getElementById("inp-from").value = lastActual.ayatFrom;
+    document.getElementById("inp-to").value = lastActual.ayatTo;
+    autoInfo.className = "info-box info-repeat";
+    autoInfo.innerHTML = `🔄 Mengulang: <b>${lastActual.surah}</b> ${lastActual.ayatFrom}–${lastActual.ayatTo}`;
+    autoInfo.classList.remove("hidden");
+    currentStatus = "Ulang";
+    renderStatusButtons();
+  } else {
+    document.getElementById("inp-surah").value = lastActual.surah;
+    document.getElementById("inp-from").value = lastActual.ayatFrom;
+    document.getElementById("inp-to").value = lastActual.ayatTo;
+    autoInfo.classList.add("hidden");
+  }
+
+  updateAyatInfo();
+  document.getElementById("form-section").classList.remove("hidden");
+  updateFormVisibility();
+}
+
+function pickStatus(s) {
+  currentStatus = s;
+  renderStatusButtons();
+  updateFormVisibility();
+}
+
+function pickNilai(n) {
+  currentNilai = n;
+  renderNilaiButtons();
+}
+
+function renderStatusButtons() {
+  STATUS.forEach(s => {
+    const btn = document.getElementById(`status-btn-${statusClass(s)}`);
+    if (btn) btn.className = `pill-btn ${currentStatus===s?"active-"+statusClass(s):""}`;
+  });
+}
+
+function renderNilaiButtons() {
+  NILAI.forEach(n => {
+    const btn = document.getElementById(`nilai-btn-${nilaiClass(n)}`);
+    if (btn) btn.className = `pill-btn ${currentNilai===n?"active-"+nilaiClass(n):""}`;
+  });
+}
+
+function updateFormVisibility() {
+  const isNo = currentStatus === "Tidak Setoran";
+  document.getElementById("surah-section").classList.toggle("hidden", isNo);
+  document.getElementById("nilai-section").classList.toggle("hidden", isNo);
+}
+
+function updateAyatInfo() {
+  const from = parseInt(document.getElementById("inp-from").value)||0;
+  const to = parseInt(document.getElementById("inp-to").value)||0;
+  const surahName = document.getElementById("inp-surah").value;
+  const sd = SURAHS.find(x=>x.name===surahName);
+  const box = document.getElementById("ayat-count-box");
+  if (to >= from && from > 0 && to > 0) {
+    const count = to - from + 1;
+    document.getElementById("ayat-count").textContent = `📊 ${count} ayat`;
+    const pct = sd ? `${Math.round((to/sd.ayat)*100)}% surat selesai` : "";
+    document.getElementById("ayat-pct").textContent = pct;
+    box.classList.remove("hidden");
+  } else {
+    box.classList.add("hidden");
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════════════════════════════════
+async function submitSetoran() {
+  if (!currentStudent) { showToast("Pilih nama siswa!","error"); return; }
+  const isNo = currentStatus === "Tidak Setoran";
+  const surah = document.getElementById("inp-surah").value;
+  const from = parseInt(document.getElementById("inp-from").value)||0;
+  const to = parseInt(document.getElementById("inp-to").value)||0;
+  const tanggal = document.getElementById("inp-date").value || todayStr();
+  const catatan = document.getElementById("inp-catatan").value.trim();
+
+  if (!isNo && !surah) { showToast("Pilih surat!","error"); return; }
+  if (!isNo && (from < 1 || to < from)) { showToast("Nomor ayat tidak valid!","error"); return; }
+
+  const rec = {
+    id: Date.now(), tanggal, student: currentStudent,
+    surah: isNo ? "-" : surah,
+    ayatFrom: isNo ? 0 : from, ayatTo: isNo ? 0 : to,
+    jumlahAyat: isNo ? 0 : to - from + 1,
+    nilai: isNo ? "-" : currentNilai,
+    status: currentStatus, catatan
+  };
+
+  records.push(rec);
+  await saveData(rec);
+  showToast(`✅ Setoran ${currentStudent} tersimpan!`);
+
+  // Reset
+  currentStudent = "";
+  currentStatus = "Lanjut";
+  currentNilai = "Jayyid";
+  document.getElementById("form-section").classList.add("hidden");
+  document.getElementById("auto-info").classList.add("hidden");
+  document.getElementById("inp-catatan").value = "";
+  renderStatusButtons();
+  renderNilaiButtons();
+  renderStudentGrid();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RIWAYAT
+// ═══════════════════════════════════════════════════════════════
+function renderRiwayat() {
+  const stu = document.getElementById("filter-student").value;
+  const date = document.getElementById("filter-date").value;
+  let filtered = [...records]
+    .filter(r => stu==="Semua" || r.student===stu)
+    .filter(r => !date || r.tanggal===date)
+    .sort((a,b) => b.id-a.id);
+
+  document.getElementById("riwayat-count").textContent = `${filtered.length} catatan ditemukan`;
+
+  // Tombol copy WA (tampil kalau filter tanggal aktif)
+  const copyWrap = document.getElementById("copy-wa-wrap");
+  if (date) {
+    copyWrap.innerHTML = `
+      <button class="copy-wa-btn" onclick="copyLaporanWA('${date}')">
+        📋 Copy Laporan ${fmtDate(date)} untuk WhatsApp
+      </button>
+    `;
+  } else {
+    copyWrap.innerHTML = "";
+  }
+
+  const list = document.getElementById("riwayat-list");
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p>Tidak ada data</p></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(r => `
+    <div class="rec-item">
+      <div class="rec-top">
+        <div style="flex:1;min-width:0;">
+          <div class="rec-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            ${r.student}
+            <span class="tag tag-${statusClass(r.status)}">${r.status}</span>
+            ${r.nilai!=="-"?`<span class="tag tag-${nilaiClass(r.nilai)}">${r.nilai}</span>`:""}
+          </div>
+          <div class="rec-sub">
+            ${r.surah!=="-"?`<b>${r.surah}</b> : ${r.ayatFrom}–${r.ayatTo} <span style="color:#9ca3af;">(${r.jumlahAyat} ayat)</span>`:'<span style="color:#ef4444;">Tidak Setoran</span>'}
+          </div>
+          <div class="rec-meta">${fmtDate(r.tanggal)}${r.catatan?` · ${r.catatan}`:""}</div>
+        </div>
+        <button class="del-btn" onclick="openModal(${r.id})">🗑</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function clearDateFilter() {
+  document.getElementById("filter-date").value = "";
+  renderRiwayat();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COPY LAPORAN WA
+// ═══════════════════════════════════════════════════════════════
+function nilaiEmoji(n) {
+  const map = {"Rasib":"⚠️","Jayyid":"👍","Jayyid Jiddan":"✨","Mumtaz":"⭐"};
+  return map[n]||"";
+}
+function statusEmoji(s) {
+  const map = {"Lanjut":"▶️","Ulang":"🔄","Membaca":"📖","Tasmi":"🎤","Tidak Setoran":"❌"};
+  return map[s]||"";
+}
+
+function copyLaporanWA(date) {
+  const dayRecs = records.filter(r => r.tanggal === date);
+  const hadir = STUDENTS.filter(s => {
+    const r = dayRecs.find(r => r.student === s);
+    return r && r.status !== "Tidak Setoran";
+  });
+  const tidakSetoran = STUDENTS.filter(s => {
+    const r = dayRecs.find(r => r.student === s);
+    return r && r.status === "Tidak Setoran";
+  });
+  const belumInput = STUDENTS.filter(s => !dayRecs.find(r => r.student === s));
+  const totalAyat = dayRecs.reduce((sum, r) => sum + r.jumlahAyat, 0);
+
+  const tanggalLong = fmtDateLong(date);
+
+  let lines = [];
+  lines.push(`📖 *MUTABAAH TAHFIDZ KELAS 3*`);
+  lines.push(`📅 ${tanggalLong}`);
+  lines.push(``);
+  lines.push(`Bismillah, berikut laporan setoran tahfidz hari ini:`);
+  lines.push(``);
+
+  if (hadir.length > 0) {
+    lines.push(`✅ *Setoran (${hadir.length}/${STUDENTS.length} siswa):*`);
+    hadir.forEach((s, i) => {
+      const r = dayRecs.find(r => r.student === s);
+      const ayatInfo = r.surah !== "-"
+        ? `${r.surah} : ${r.ayatFrom}–${r.ayatTo} (${r.jumlahAyat} ayat)`
+        : "";
+      const nEmoji = nilaiEmoji(r.nilai);
+      const sEmoji = statusEmoji(r.status);
+      let line = `${i+1}. *${s}*`;
+      if (ayatInfo) line += ` — ${ayatInfo}`;
+      line += ` | ${sEmoji} ${r.status}`;
+      if (r.nilai !== "-") line += ` | ${nEmoji} ${r.nilai}`;
+      if (r.catatan) line += `\n    📝 _${r.catatan}_`;
+      lines.push(line);
+    });
+    lines.push(``);
+  }
+
+  if (tidakSetoran.length > 0) {
+    lines.push(`❌ *Tidak Setoran (${tidakSetoran.length} siswa):*`);
+    tidakSetoran.forEach(s => lines.push(`• ${s}`));
+    lines.push(``);
+  }
+
+  if (belumInput.length > 0) {
+    lines.push(`⏳ *Belum Ada Data (${belumInput.length} siswa):*`);
+    belumInput.forEach(s => lines.push(`• ${s}`));
+    lines.push(``);
+  }
+
+  lines.push(`📊 *Total ayat hari ini: ${totalAyat} ayat*`);
+  lines.push(``);
+  lines.push(`_Jazakumullah khairan atas perhatian Bapak/Ibu_ 🤲`);
+
+  const text = lines.join("\n");
+
+  // Copy to clipboard
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast("✅ Laporan berhasil dicopy! Silakan paste di WA.","success"))
+      .catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    showToast("✅ Laporan berhasil dicopy! Silakan paste di WA.","success");
+  } catch(e) {
+    showToast("Gagal copy. Coba lagi.","error");
+  }
+  document.body.removeChild(ta);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LAPORAN
+// ═══════════════════════════════════════════════════════════════
+function shiftWeek(dir) {
+  const d = new Date(weekStart + "T00:00:00");
+  d.setDate(d.getDate() + dir * 7);
+  weekStart = d.toISOString().split("T")[0];
+  renderLaporan();
+}
+
+function renderLaporan() {
+  const wd = getWeekDates(weekStart);
+  document.getElementById("week-label").textContent = `${fmtDate(wd[0])} – ${fmtDate(wd[6])}`;
+
+  // Overview totals
+  const weekRecs = records.filter(r=>wd.includes(r.tanggal));
+  const totalAyat = weekRecs.reduce((s,r)=>s+r.jumlahAyat,0);
+  const totalSetoran = weekRecs.filter(r=>r.status!=="Tidak Setoran").length;
+  document.getElementById("lap-overview").innerHTML = `
+    <div class="ov-card g1"><div class="ov-num">${totalAyat}</div><div class="ov-lbl">total ayat pekan ini</div></div>
+    <div class="ov-card g2"><div class="ov-num">${totalSetoran}</div><div class="ov-lbl">total setoran pekan ini</div></div>
+  `;
+
+  // Per student
+  const list = document.getElementById("lap-list");
+  list.innerHTML = STUDENTS.map(s => {
+    const sRecs = wd.map(d => records.find(r=>r.student===s&&r.tanggal===d));
+    const totalAyatS = sRecs.reduce((sum,r)=>r?sum+r.jumlahAyat:sum,0);
+    const hariSetoran = sRecs.filter(r=>r&&r.status!=="Tidak Setoran").length;
+
+    const dayGrid = wd.map((d,i) => {
+      const r = records.find(rec=>rec.student===s&&rec.tanggal===d);
+      const cls = !r?"empty":statusClass(r.status);
+      const val = !r?"-":r.status==="Tidak Setoran"?"✗":r.jumlahAyat;
+      const title = r&&r.surah!=="-"?`${r.surah} ${r.ayatFrom}-${r.ayatTo}`:"";
+      return `<div>
+        <div class="day-cell-label">${DAYS[i].slice(0,3)}</div>
+        <div class="day-cell ${cls}" title="${title}">${val}</div>
+      </div>`;
+    }).join("");
+
+    const details = wd.map((d,i) => {
+      const r = records.find(rec=>rec.student===s&&rec.tanggal===d);
+      if (!r||r.status==="Tidak Setoran") return "";
+      return `<div class="day-detail">
+        <span class="day-name">${DAYS[i].slice(0,3)}</span>
+        <span><b>${r.surah}</b> ${r.ayatFrom}–${r.ayatTo}</span>
+        <span class="tag tag-${nilaiClass(r.nilai)}">${r.nilai}</span>
+        <span class="tag tag-${statusClass(r.status)}">${r.status}</span>
+      </div>`;
+    }).join("");
+
+    return `
+      <div class="lap-card">
+        <div class="lap-header">
+          <span class="lap-name">${s}</span>
+          <span class="lap-total">${totalAyatS} ayat · ${hariSetoran}hr</span>
+        </div>
+        <div class="day-grid">${dayGrid}</div>
+        <div>${details}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATISTIK
+// ═══════════════════════════════════════════════════════════════
+function renderStat() {
+  const today = todayStr();
+  const stats = STUDENTS.map(s => {
+    const recs = records.filter(r=>r.student===s);
+    const setoran = recs.filter(r=>r.status!=="Tidak Setoran");
+    const totalAyat = setoran.reduce((sum,r)=>sum+r.jumlahAyat,0);
+    const mumtaz = setoran.filter(r=>r.nilai==="Mumtaz").length;
+    // streak
+    let streak = 0;
+    for (let i=0;i<60;i++) {
+      const d = new Date(); d.setDate(d.getDate()-i);
+      const ds = d.toISOString().split("T")[0];
+      if (recs.find(r=>r.tanggal===ds&&r.status!=="Tidak Setoran")) streak++;
+      else if (i>0) break;
+    }
+    const last = [...recs].sort((a,b)=>b.id-a.id)[0];
+    const lastActual = [...recs].filter(r=>r.status!=="Tidak Setoran").sort((a,b)=>b.id-a.id)[0];
+    return {name:s,totalAyat,mumtaz,streak,totalSetoran:setoran.length,last,lastActual};
+  }).sort((a,b)=>b.totalAyat-a.totalAyat);
+
+  const maxAyat = Math.max(...stats.map(s=>s.totalAyat), 1);
+  const notToday = STUDENTS.filter(s=>!records.find(r=>r.student===s&&r.tanggal===today));
+
+  // Alert
+  const alertEl = document.getElementById("stat-alert");
+  alertEl.innerHTML = notToday.length>0 ? `
+    <div class="alert-box">
+      <div class="alert-title">⚠️ Belum Ada Input Hari Ini</div>
+      <div class="alert-tags">${notToday.map(s=>`<span class="alert-tag">${s}</span>`).join("")}</div>
+    </div>
+  ` : "";
+
+  // Podium
+  const medals = ["🥇","🥈","🥉"];
+  const podiumClass = ["gold","silver","bronze"];
+  document.getElementById("stat-podium").innerHTML = stats.slice(0,3).map((s,i)=>`
+    <div class="podium-card ${podiumClass[i]}">
+      <div class="podium-emoji">${medals[i]}</div>
+      <div class="podium-name">${s.name}</div>
+      <div class="podium-ayat">${s.totalAyat}</div>
+      <div class="podium-lbl">ayat</div>
+    </div>
+  `).join("");
+
+  // Progress bars
+  document.getElementById("stat-progress").innerHTML = `
+    <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Total Ayat Dihafalkan</div>
+    ${stats.map(s=>`
+      <div class="progress-row">
+        <div class="progress-header">
+          <span class="progress-name">${s.name}</span>
+          <span class="progress-val">${s.totalAyat} ayat</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${Math.max((s.totalAyat/maxAyat)*100,1.5)}%"></div>
+        </div>
+      </div>
+    `).join("")}
+  `;
+
+  // Stat cards
+  document.getElementById("stat-grid").innerHTML = stats.map((s,i)=>`
+    <div class="stat-card">
+      <div class="stat-sname">${i<3?medals[i]+' ':''} ${s.name}</div>
+      <div class="stat-pos">${s.lastActual?`${s.lastActual.surah} :${s.lastActual.ayatTo}`:"Belum setoran"}</div>
+      <div class="stat-mini-grid">
+        <div class="stat-mini green"><div class="val">${s.totalAyat}</div><div class="lbl">ayat</div></div>
+        <div class="stat-mini orange"><div class="val">${s.streak}🔥</div><div class="lbl">streak</div></div>
+        <div class="stat-mini yellow"><div class="val">${s.mumtaz}⭐</div><div class="lbl">mumtaz</div></div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════════
+function exportExcel() {
+  const wd = getWeekDates(weekStart);
+  const header = ["No","Nama",...DAYS,"Total Ayat","Hari Setoran","Tidak Setoran"];
+  const rows = STUDENTS.map((s,i) => {
+    const dayData = wd.map(d => {
+      const r = records.find(rec=>rec.student===s&&rec.tanggal===d);
+      if (!r) return "-";
+      if (r.status==="Tidak Setoran") return "Tidak Setoran";
+      return `${r.surah} ${r.ayatFrom}-${r.ayatTo} | ${r.nilai} | ${r.status}`;
+    });
+    const totalAyat = wd.reduce((sum,d)=>{
+      const r=records.find(rec=>rec.student===s&&rec.tanggal===d);
+      return r?sum+r.jumlahAyat:sum;
+    },0);
+    const hari = wd.filter(d=>{ const r=records.find(rec=>rec.student===s&&rec.tanggal===d); return r&&r.status!=="Tidak Setoran"; }).length;
+    const tidak = wd.filter(d=>{ const r=records.find(rec=>rec.student===s&&rec.tanggal===d); return r&&r.status==="Tidak Setoran"; }).length;
+    return [i+1, s, ...dayData, totalAyat, hari, tidak];
+  });
+
+  const totalKelas = rows.reduce((sum,r)=>sum+r[9],0);
+  const titleRow = [`LAPORAN MUTABAAH TAHFIDZ - KELAS 3`];
+  const periodRow = [`Periode: ${fmtDate(wd[0])} s.d. ${fmtDate(wd[6])}`];
+  const totalRow = ["","TOTAL KELAS","","","","","","","","",totalKelas,"",""];
+
+  try {
+    const wb = XLSX.utils.book_new();
+    const data = [titleRow, periodRow, [], header, ...rows, [], totalRow];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws["!cols"] = [{wch:4},{wch:14},...DAYS.map(()=>({wch:30})),{wch:12},{wch:14},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan Mingguan");
+    XLSX.writeFile(wb, `Laporan_Tahfidz_Kelas3_${weekStart}.xlsx`);
+    showToast("📥 File Excel berhasil diunduh!");
+  } catch(e) {
+    // CSV fallback
+    const csv = [header,...rows].map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href=url; a.download=`Laporan_Tahfidz_Kelas3_${weekStart}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    showToast("📥 File CSV berhasil diunduh!");
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REFRESH ALL
+// ═══════════════════════════════════════════════════════════════
+function refreshAll() {
+  renderStudentGrid();
+  if (currentTab==="riwayat") renderRiwayat();
+  if (currentTab==="laporan") renderLaporan();
+  if (currentTab==="stat") renderStat();
+  const todayCount = records.filter(r=>r.tanggal===todayStr()).length;
+  document.getElementById("header-count").textContent = todayCount;
+}
+
+// Date change → re-render grid
+document.getElementById("inp-date").addEventListener("change", () => {
+  renderStudentGrid();
+});
+
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+(async () => {
+  initForm();
+  refreshAll();
+
+  const cfg = getStoredConfig();
+  if (cfg) {
+    initFirebase(cfg);
+  } else {
+    document.getElementById("setup-overlay").style.display = "flex";
+    setConnStatus(false);
+  }
+})();
+</script>
+</body>
+</html>
