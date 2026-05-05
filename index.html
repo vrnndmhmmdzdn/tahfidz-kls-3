@@ -542,65 +542,61 @@ const STUDENTS = [
 ];
 
 const SURAHS = [
-  {no:46,name:"Al Ahqaf",ayat:35},
-  {no:47,name:"Muhammad",ayat:38},
-  {no:48,name:"Al Fath",ayat:29},
-  {no:49,name:"Al Hujurat",ayat:18},
-  {no:50,name:"Qaf",ayat:45},
-  {no:51,name:"Az Zariyat",ayat:60},
-  {no:52,name:"At Thur",ayat:49},
-  {no:53,name:"An Najm",ayat:62},
-  {no:54,name:"Al Qamar",ayat:55},
-  {no:55,name:"Ar Rahman",ayat:78},
-  {no:56,name:"Al Waqi'ah",ayat:96},
-  {no:67,name:"Al Mulk",ayat:30},
-  {no:68,name:"Al Qalam",ayat:52},
-  {no:69,name:"Al Haqqah",ayat:52},
-  {no:70,name:"Al Ma'arij",ayat:44},
-  {no:71,name:"Nuh",ayat:28},
-  {no:72,name:"Al Jin",ayat:28},
-  {no:73,name:"Al Muzzammil",ayat:20},
-  {no:74,name:"Al Muddatsir",ayat:56},
-  {no:75,name:"Al Qiyamah",ayat:40},
-  {no:76,name:"Al Insan",ayat:31},
-  {no:77,name:"Al Mursalat",ayat:50},
-  {no:78,name:"An Naba",ayat:40},
-  {no:79,name:"An Nazi'at",ayat:46},
-  {no:80,name:"Abasa",ayat:42},
-  {no:81,name:"At Takwir",ayat:29},
-  {no:82,name:"Al Infitar",ayat:19},
-  {no:83,name:"Al Mutaffifin",ayat:36},
-  {no:84,name:"Al Insyiqaq",ayat:25},
-  {no:85,name:"Al Buruj",ayat:22},
-  {no:86,name:"At Tariq",ayat:17},
-  {no:87,name:"Al A'la",ayat:19},
-  {no:88,name:"Al Ghasyiyah",ayat:26},
-  {no:89,name:"Al Fajr",ayat:30},
-  {no:90,name:"Al Balad",ayat:20},
-  {no:91,name:"Asy Syams",ayat:15},
-  {no:92,name:"Al Lail",ayat:21},
-  {no:93,name:"Ad Dhuha",ayat:11},
-  {no:94,name:"Al Insyirah",ayat:8},
-  {no:95,name:"At Tin",ayat:8},
-  {no:96,name:"Al Alaq",ayat:19},
-  {no:97,name:"Al Qadr",ayat:5},
-  {no:98,name:"Al Bayyinah",ayat:8},
-  {no:99,name:"Az Zalzalah",ayat:8},
-  {no:100,name:"Al Adiyat",ayat:11},
-  {no:101,name:"Al Qari'ah",ayat:11},
-  {no:102,name:"At Takatsur",ayat:8},
-  {no:103,name:"Al Asr",ayat:3},
-  {no:104,name:"Al Humazah",ayat:9},
-  {no:105,name:"Al Fil",ayat:5},
-  {no:106,name:"Quraisy",ayat:4},
-  {no:107,name:"Al Ma'un",ayat:7},
-  {no:108,name:"Al Kautsar",ayat:3},
-  {no:109,name:"Al Kafirun",ayat:6},
-  {no:110,name:"An Nasr",ayat:3},
-  {no:111,name:"Al Masad",ayat:5},
-  {no:112,name:"Al Ikhlas",ayat:4},
-  {no:113,name:"Al  ",ayat:5},
-  {no:114,name:"An Nas",ayat:6},
+  // Surah populer
+  {no:1,  name:"Al Fatihah",    ayat:7},
+  {no:36, name:"Yasin",         ayat:83},
+  {no:55, name:"Ar Rahman",     ayat:78},
+  {no:56, name:"Al Waqi'ah",    ayat:96},
+  // Juz 29
+  {no:67, name:"Al Mulk",       ayat:30},
+  {no:68, name:"Al Qalam",      ayat:52},
+  {no:69, name:"Al Haqqah",     ayat:52},
+  {no:70, name:"Al Ma'arij",    ayat:44},
+  {no:71, name:"Nuh",           ayat:28},
+  {no:72, name:"Al Jin",        ayat:28},
+  {no:73, name:"Al Muzzammil",  ayat:20},
+  {no:74, name:"Al Muddatsir",  ayat:56},
+  {no:75, name:"Al Qiyamah",    ayat:40},
+  {no:76, name:"Al Insan",      ayat:31},
+  {no:77, name:"Al Mursalat",   ayat:50},
+  // Juz 30
+  {no:78, name:"An Naba",       ayat:40},
+  {no:79, name:"An Nazi'at",    ayat:46},
+  {no:80, name:"Abasa",         ayat:42},
+  {no:81, name:"At Takwir",     ayat:29},
+  {no:82, name:"Al Infitar",    ayat:19},
+  {no:83, name:"Al Mutaffifin", ayat:36},
+  {no:84, name:"Al Insyiqaq",   ayat:25},
+  {no:85, name:"Al Buruj",      ayat:22},
+  {no:86, name:"At Tariq",      ayat:17},
+  {no:87, name:"Al A'la",       ayat:19},
+  {no:88, name:"Al Ghasyiyah",  ayat:26},
+  {no:89, name:"Al Fajr",       ayat:30},
+  {no:90, name:"Al Balad",      ayat:20},
+  {no:91, name:"Asy Syams",     ayat:15},
+  {no:92, name:"Al Lail",       ayat:21},
+  {no:93, name:"Ad Dhuha",      ayat:11},
+  {no:94, name:"Al Insyirah",   ayat:8},
+  {no:95, name:"At Tin",        ayat:8},
+  {no:96, name:"Al Alaq",       ayat:19},
+  {no:97, name:"Al Qadr",       ayat:5},
+  {no:98, name:"Al Bayyinah",   ayat:8},
+  {no:99, name:"Az Zalzalah",   ayat:8},
+  {no:100,name:"Al Adiyat",     ayat:11},
+  {no:101,name:"Al Qari'ah",    ayat:11},
+  {no:102,name:"At Takatsur",   ayat:8},
+  {no:103,name:"Al Asr",        ayat:3},
+  {no:104,name:"Al Humazah",    ayat:9},
+  {no:105,name:"Al Fil",        ayat:5},
+  {no:106,name:"Quraisy",       ayat:4},
+  {no:107,name:"Al Ma'un",      ayat:7},
+  {no:108,name:"Al Kautsar",    ayat:3},
+  {no:109,name:"Al Kafirun",    ayat:6},
+  {no:110,name:"An Nasr",       ayat:3},
+  {no:111,name:"Al Masad",      ayat:5},
+  {no:112,name:"Al Ikhlas",     ayat:4},
+  {no:113,name:"Al Falaq",      ayat:5},
+  {no:114,name:"An Nas",        ayat:6},
 ];
 
 const NILAI = ["Rasib","Jayyid","Jayyid Jiddan","Mumtaz"];
@@ -621,20 +617,29 @@ let pendingDeleteId = null;
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
-function todayStr() { return new Date().toISOString().split("T")[0]; }
+
+// Pakai local date (bukan UTC) supaya tidak geser di timezone Indonesia
+function toLocalDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+function todayStr() { return toLocalDateStr(new Date()); }
 
 function getMondayStr(date) {
   const d = new Date(date);
   const day = d.getDay();
   d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-  return d.toISOString().split("T")[0];
+  return toLocalDateStr(d);
 }
 
 function getWeekDates(mondayStr) {
   const m = new Date(mondayStr + "T00:00:00");
   return Array.from({length:7}, (_,i) => {
     const d = new Date(m); d.setDate(m.getDate()+i);
-    return d.toISOString().split("T")[0];
+    return toLocalDateStr(d);
   });
 }
 
