@@ -101,6 +101,7 @@
   .pill-btn.active-membaca { background: var(--blue-l); color: var(--blue); border-color: #93c5fd; }
   .pill-btn.active-tasmi { background: var(--purple-l); color: var(--purple); border-color: #c4b5fd; }
   .pill-btn.active-tidak { background: var(--red-l); color: var(--red); border-color: #fca5a5; }
+  .pill-btn.active-absen { background: #f3f4f6; color: #374151; border-color: #9ca3af; }
   .pill-btn.active-rasib { background: var(--red-l); color: var(--red); border-color: #fca5a5; }
   .pill-btn.active-jayyid { background: var(--amber-l); color: var(--amber); border-color: #fcd34d; }
   .pill-btn.active-jj { background: var(--blue-l); color: var(--blue); border-color: #93c5fd; }
@@ -151,6 +152,7 @@
   .tag-membaca { background: var(--blue-l); color: var(--blue); }
   .tag-tasmi { background: var(--purple-l); color: var(--purple); }
   .tag-tidak { background: var(--red-l); color: var(--red); }
+  .tag-absen { background: #f3f4f6; color: #374151; }
   .tag-rasib { background: var(--red-l); color: var(--red); }
   .tag-jayyid { background: var(--amber-l); color: var(--amber); }
   .tag-jj { background: var(--blue-l); color: var(--blue); }
@@ -653,7 +655,7 @@ const SURAHS = [
 ];
 
 const NILAI = ["Rasib","Jayyid","Jayyid Jiddan","Mumtaz"];
-const STATUS = ["Lanjut","Ulang","Membaca","Tasmi","Tidak Setoran"];
+const STATUS = ["Lanjut","Ulang","Membaca","Tasmi","Tidak Setoran","Tidak Masuk"];
 const DAYS = ["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Ahad"];
 
 // ═══════════════════════════════════════════════════════════════
@@ -709,7 +711,7 @@ function fmtDateLong(str) {
 }
 
 function statusClass(s) {
-  const map = {"Lanjut":"lanjut","Ulang":"ulang","Membaca":"membaca","Tasmi":"tasmi","Tidak Setoran":"tidak"};
+  const map = {"Lanjut":"lanjut","Ulang":"ulang","Membaca":"membaca","Tasmi":"tasmi","Tidak Setoran":"tidak","Tidak Masuk":"absen"};
   return map[s]||"";
 }
 
@@ -931,7 +933,7 @@ function renderStudentGrid() {
   STUDENTS.forEach(s => {
     // Ambil setoran terakhir yang nyata (bukan Tidak Setoran) dalam 7 hari ke belakang
     const last = [...records]
-      .filter(r => r.student === s && r.status !== "Tidak Setoran"
+      .filter(r => r.student === s && r.status !== "Tidak Setoran" && r.status !== "Tidak Masuk"
         && r.tanggal < today && r.tanggal >= sevenDaysAgo)
       .sort((a,b) => b.tanggal.localeCompare(a.tanggal) || b.id - a.id)[0] || null;
 
@@ -989,7 +991,7 @@ function getLastRec(s, beforeDate) {
 
 function getLastActualRec(s, beforeDate) {
   return [...records]
-    .filter(r => r.student === s && r.status !== "Tidak Setoran" && (!beforeDate || r.tanggal < beforeDate))
+    .filter(r => r.student === s && r.status !== "Tidak Setoran" && r.status !== "Tidak Masuk" && (!beforeDate || r.tanggal < beforeDate))
     .sort((a,b) => b.tanggal.localeCompare(a.tanggal) || b.id - a.id)[0] || null;
 }
 
@@ -1085,7 +1087,7 @@ function renderNilaiButtons() {
 }
 
 function updateFormVisibility() {
-  const isNo = currentStatus === "Tidak Setoran";
+  const isNo = currentStatus === "Tidak Setoran" || currentStatus === "Tidak Masuk";
   document.getElementById("surah-section").classList.toggle("hidden", isNo);
   document.getElementById("nilai-section").classList.toggle("hidden", isNo);
 }
@@ -1112,7 +1114,7 @@ function updateAyatInfo() {
 // ═══════════════════════════════════════════════════════════════
 async function submitSetoran() {
   if (!currentStudent) { showToast("Pilih nama siswa!","error"); return; }
-  const isNo = currentStatus === "Tidak Setoran";
+  const isNo = currentStatus === "Tidak Setoran" || currentStatus === "Tidak Masuk";
   const surah = document.getElementById("inp-surah").value;
   const from = parseInt(document.getElementById("inp-from").value)||0;
   const to = parseInt(document.getElementById("inp-to").value)||0;
@@ -1210,7 +1212,7 @@ function nilaiEmoji(n) {
   return map[n]||"";
 }
 function statusEmoji(s) {
-  const map = {"Lanjut":"▶️","Ulang":"🔄","Membaca":"📖","Tasmi":"🎤","Tidak Setoran":"❌"};
+  const map = {"Lanjut":"▶️","Ulang":"🔄","Membaca":"📖","Tasmi":"🎤","Tidak Setoran":"❌","Tidak Masuk":"🏠"};
   return map[s]||"";
 }
 
@@ -1218,11 +1220,15 @@ function copyLaporanWA(date) {
   const dayRecs = records.filter(r => r.tanggal === date);
   const hadir = STUDENTS.filter(s => {
     const r = dayRecs.find(r => r.student === s);
-    return r && r.status !== "Tidak Setoran";
+    return r && r.status !== "Tidak Setoran" && r.status !== "Tidak Masuk";
   });
   const tidakSetoran = STUDENTS.filter(s => {
     const r = dayRecs.find(r => r.student === s);
     return r && r.status === "Tidak Setoran";
+  });
+  const tidakMasuk = STUDENTS.filter(s => {
+    const r = dayRecs.find(r => r.student === s);
+    return r && r.status === "Tidak Masuk";
   });
   const belumInput = STUDENTS.filter(s => !dayRecs.find(r => r.student === s));
   const totalAyat = dayRecs.reduce((sum, r) => sum + r.jumlahAyat, 0);
@@ -1254,6 +1260,15 @@ function copyLaporanWA(date) {
   if (tidakSetoran.length > 0) {
     lines.push(`❌ *Tidak Setoran (${tidakSetoran.length} siswa):*`);
     tidakSetoran.forEach(s => {
+      const r = dayRecs.find(r => r.student === s);
+      lines.push(`• ${s}${r?.catatan ? ` — _${r.catatan}_` : ""}`);
+    });
+    lines.push(``);
+  }
+
+  if (tidakMasuk.length > 0) {
+    lines.push(`🏠 *Tidak Masuk (${tidakMasuk.length} siswa):*`);
+    tidakMasuk.forEach(s => {
       const r = dayRecs.find(r => r.student === s);
       lines.push(`• ${s}${r?.catatan ? ` — _${r.catatan}_` : ""}`);
     });
