@@ -338,26 +338,12 @@
 </head>
 <body>
 
-<!-- Setup Overlay (tampil kalau Firebase belum dikonfigurasi) -->
+<!-- Setup Overlay -->
 <div id="setup-overlay" class="setup-overlay" style="display:none;">
   <div class="setup-box">
     <div style="font-size:36px;margin-bottom:10px;">🔧</div>
-    <div class="setup-title">Konfigurasi Firebase</div>
-    <div class="setup-sub">Supaya data tersimpan online dan bisa diakses bersama, perlu menghubungkan ke Firebase (gratis). Ikuti langkah berikut:</div>
-
-    <div class="setup-step">
-      <div class="setup-step-num">Langkah 1</div>
-      <div class="setup-step-text">Buka <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Buat project baru → pilih nama bebas.</div>
-    </div>
-    <div class="setup-step">
-      <div class="setup-step-num">Langkah 2</div>
-      <div class="setup-step-text">Di project, klik <b>Firestore Database</b> → <b>Create database</b> → pilih mode <code>test mode</code> → pilih region terdekat.</div>
-    </div>
-    <div class="setup-step">
-      <div class="setup-step-num">Langkah 3</div>
-      <div class="setup-step-text">Klik ikon ⚙️ → <b>Project settings</b> → scroll ke bawah → klik <b>&lt;/&gt;</b> (Web app) → daftarkan app → salin bagian <code>firebaseConfig</code> dan paste di bawah ini:</div>
-    </div>
-
+    <div class="setup-title">Koneksi Firebase</div>
+    <div class="setup-sub">Paste <b>firebaseConfig</b> dari Firebase Console di bawah ini:</div>
     <textarea class="setup-textarea" id="setup-input" placeholder='{
   "apiKey": "AIza...",
   "authDomain": "project.firebaseapp.com",
@@ -366,7 +352,7 @@
   "messagingSenderId": "12345",
   "appId": "1:12345:web:abcdef"
 }'></textarea>
-    <div class="setup-error" id="setup-error">❌ Format tidak valid. Pastikan paste JSON dari firebaseConfig yang benar.</div>
+    <div class="setup-error" id="setup-error">❌ Format tidak valid. Pastikan paste firebaseConfig yang benar.</div>
     <button class="setup-save-btn" onclick="saveFirebaseConfig()">🚀 Simpan & Mulai</button>
   </div>
 </div>
