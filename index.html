@@ -877,9 +877,21 @@ function renderStudentGrid() {
   const grid = document.getElementById("student-grid");
   grid.innerHTML = "";
   const notToday = [];
+
+  // Batas 7 hari ke belakang dari tanggal input
+  const d7 = new Date(today + "T00:00:00");
+  d7.setDate(d7.getDate() - 7);
+  const sevenDaysAgo = toLocalDateStr(d7);
+
   STUDENTS.forEach(s => {
-    const last = getLastRec(s, today);
+    // Ambil setoran terakhir yang nyata (bukan Tidak Setoran) dalam 7 hari ke belakang
+    const last = [...records]
+      .filter(r => r.student === s && r.status !== "Tidak Setoran"
+        && r.tanggal < today && r.tanggal >= sevenDaysAgo)
+      .sort((a,b) => b.tanggal.localeCompare(a.tanggal) || b.id - a.id)[0] || null;
+
     const done = records.find(r => r.student===s && r.tanggal===today);
+    if (!done) notToday.push(s);
     if (!done) notToday.push(s);
     const btn = document.createElement("button");
     btn.className = `student-btn ${currentStudent===s?"active":done?"done":""}`;
