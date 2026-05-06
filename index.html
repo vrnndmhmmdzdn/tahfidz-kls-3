@@ -893,6 +893,20 @@ function renderStudentGrid() {
     const done = records.find(r => r.student===s && r.tanggal===today);
     if (!done) notToday.push(s);
     if (!done) notToday.push(s);
+    let posLabel = "–";
+    if (last) {
+      if (last.status === "Ulang") {
+        posLabel = `${last.surah} : ${last.ayatFrom}–${last.ayatTo}`;
+      } else {
+        const sd = SURAHS.find(x => x.name === last.surah);
+        const nextAyat = last.ayatTo + 1;
+        if (sd && nextAyat <= sd.ayat) {
+          posLabel = `${last.surah} : mulai ayat ${nextAyat}`;
+        } else if (sd) {
+          posLabel = `${last.surah} ✓ selesai`;
+        }
+      }
+    }
     const btn = document.createElement("button");
     btn.className = `student-btn ${currentStudent===s?"active":done?"done":""}`;
     btn.innerHTML = `
@@ -900,7 +914,7 @@ function renderStudentGrid() {
         <span>${s}</span>
         ${done && currentStudent!==s ? '<span>✓</span>' : ''}
       </div>
-      <span class="s-pos">${last&&last.surah!=="-"?last.surah+" :"+last.ayatTo:"–"}</span>
+      <span class="s-pos">${posLabel}</span>
     `;
     btn.onclick = () => pickStudent(s);
     grid.appendChild(btn);
@@ -959,32 +973,13 @@ function pickStudent(s) {
   document.getElementById("inp-catatan").value = "";
 
   if (!lastActual) {
-    // New student
+    // Belum pernah setoran
     document.getElementById("inp-surah").value = "";
     document.getElementById("inp-from").value = 1;
     document.getElementById("inp-to").value = 1;
     autoInfo.classList.add("hidden");
-  } else if (last && last.status === "Lanjut") {
-    // Continue from next ayat
-    const sd = SURAHS.find(x=>x.name===lastActual.surah);
-    if (sd && lastActual.ayatTo < sd.ayat) {
-      const next = lastActual.ayatTo + 1;
-      document.getElementById("inp-surah").value = lastActual.surah;
-      document.getElementById("inp-from").value = next;
-      document.getElementById("inp-to").value = next;
-      autoInfo.className = "info-box info-next";
-      autoInfo.innerHTML = `✨ Lanjut dari <b>${lastActual.surah}</b> ayat <b>${next}</b>`;
-      autoInfo.classList.remove("hidden");
-    } else {
-      // Surah complete
-      document.getElementById("inp-surah").value = "";
-      document.getElementById("inp-from").value = 1;
-      document.getElementById("inp-to").value = 1;
-      autoInfo.className = "info-box info-done";
-      autoInfo.innerHTML = `🎉 <b>${lastActual.surah}</b> sudah selesai! Silakan pilih surat baru.`;
-      autoInfo.classList.remove("hidden");
-    }
-  } else if (last && last.status === "Ulang") {
+  } else if (lastActual.status === "Ulang") {
+    // Ulang: isi range yang sama
     document.getElementById("inp-surah").value = lastActual.surah;
     document.getElementById("inp-from").value = lastActual.ayatFrom;
     document.getElementById("inp-to").value = lastActual.ayatTo;
@@ -994,10 +989,25 @@ function pickStudent(s) {
     currentStatus = "Ulang";
     renderStatusButtons();
   } else {
-    document.getElementById("inp-surah").value = lastActual.surah;
-    document.getElementById("inp-from").value = lastActual.ayatFrom;
-    document.getElementById("inp-to").value = lastActual.ayatTo;
-    autoInfo.classList.add("hidden");
+    // Lanjut / lainnya: isi ayat berikutnya
+    const sd = SURAHS.find(x => x.name === lastActual.surah);
+    if (sd && lastActual.ayatTo < sd.ayat) {
+      const next = lastActual.ayatTo + 1;
+      document.getElementById("inp-surah").value = lastActual.surah;
+      document.getElementById("inp-from").value = next;
+      document.getElementById("inp-to").value = next;
+      autoInfo.className = "info-box info-next";
+      autoInfo.innerHTML = `✨ Lanjut dari <b>${lastActual.surah}</b> ayat <b>${next}</b>`;
+      autoInfo.classList.remove("hidden");
+    } else {
+      // Surah selesai
+      document.getElementById("inp-surah").value = "";
+      document.getElementById("inp-from").value = 1;
+      document.getElementById("inp-to").value = 1;
+      autoInfo.className = "info-box info-done";
+      autoInfo.innerHTML = `🎉 <b>${lastActual?.surah}</b> sudah selesai! Silakan pilih surat baru.`;
+      autoInfo.classList.remove("hidden");
+    }
   }
 
   updateAyatInfo();
