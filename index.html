@@ -513,6 +513,9 @@
     <button class="week-nav-btn" onclick="shiftWeek(1)">▶</button>
   </div>
   <div class="overview-grid" id="lap-overview"></div>
+  <button class="copy-wa-btn" id="copy-pekan-btn" onclick="copyLaporanPekananWA()" style="margin-bottom:12px;">
+    📋 Copy Laporan Pekanan untuk WhatsApp
+  </button>
   <div id="lap-list"></div>
   <button class="export-btn" onclick="exportExcel()">
     📥 Export Excel / CSV
@@ -1427,7 +1430,120 @@ document.getElementById("inp-date").addEventListener("change", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// BOOT
+// COPY LAPORAN PEKANAN WA
+// ═══════════════════════════════════════════════════════════════
+function copyLaporanPekananWA() {
+  const wd = getWeekDates(weekStart);
+  const weekRecs = records.filter(r => wd.includes(r.tanggal));
+  const totalAyat = weekRecs.reduce((s,r) => s + r.jumlahAyat, 0);
+  const totalSetoran = weekRecs.filter(r => r.status !== "Tidak Setoran").length;
+
+  // Tanggal range pekan
+  const tglRange = `${fmtDateLong(wd[0])} – ${fmtDateLong(wd[6])}`;
+
+  // Nama hari singkat
+  const hariSingkat = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
+  // wd[0] = Senin (index 1 di JS)
+  // wd dimulai dari Senin, sesuaikan label
+  const hariLabel = ["Sen","Sel","Rab","Kam","Jum","Sab","Min"];
+
+  // Buat data per siswa
+  const studentData = STUDENTS.map(s => {
+    const sRecs = wd.map(d => records.find(r => r.student === s && r.tanggal === d));
+    const totalAyatS = sRecs.reduce((sum,r) => r ? sum + r.jumlahAyat : sum, 0);
+    const hariSetoran = sRecs.filter(r => r && r.status !== "Tidak Setoran").length;
+    const tidakSetoran = sRecs.filter(r => r && r.status === "Tidak Setoran").length;
+    const belumInput = sRecs.filter(r => !r).length;
+    const detailHari = wd.map((d,i) => {
+      const r = records.find(rec => rec.student === s && rec.tanggal === d);
+      return { hari: hariLabel[i], r };
+    }).filter(x => x.r && x.r.status !== "Tidak Setoran");
+    return { name: s, totalAyatS, hariSetoran, tidakSetoran, belumInput, detailHari, sRecs };
+  });
+
+  // Kelompokkan
+  const aktif = studentData.filter(s => s.hariSetoran > 0).sort((a,b) => b.totalAyatS - a.totalAyatS);
+  const tidakPernah = studentData.filter(s => s.hariSetoran === 0 && s.sRecs.some(r => r));
+  const belumSama = studentData.filter(s => s.sRecs.every(r => !r));
+
+  let lines = [];
+  lines.push(`📖 *LAPORAN MUTABAAH TAHFIDZ PEKANAN*`);
+  lines.push(`🏫 *Kelas 3*`);
+  lines.push(`📅 ${tglRange}`);
+  lines.push(``);
+  lines.push(`Assalamu'alaikum warahmatullahi wabarakatuh 🌿`);
+  lines.push(`Berikut laporan setoran tahfidz pekan ini:`);
+  lines.push(``);
+  lines.push(`━━━━━━━━━━━━━━━━━━`);
+  lines.push(`📊 *RINGKASAN PEKAN*`);
+  lines.push(`━━━━━━━━━━━━━━━━━━`);
+  lines.push(`🔢 Total setoran : *${totalSetoran}x*`);
+  lines.push(`📝 Total ayat    : *${totalAyat} ayat*`);
+  lines.push(`👦 Jumlah siswa  : *${STUDENTS.length} siswa*`);
+  lines.push(``);
+
+  if (aktif.length > 0) {
+    lines.push(`━━━━━━━━━━━━━━━━━━`);
+    lines.push(`✅ *REKAP PER SISWA*`);
+    lines.push(`━━━━━━━━━━━━━━━━━━`);
+    aktif.forEach((s, i) => {
+      lines.push(``);
+      lines.push(`${i+1}. *${s.name}*  _(${s.hariSetoran}hr · ${s.totalAyatS} ayat)_`);
+      s.detailHari.forEach(({hari, r}) => {
+        const nEmoji = nilaiEmoji(r.nilai);
+        const sEmoji = statusEmoji(r.status);
+        const ayatInfo = r.surah !== "-" ? `${r.surah} ${r.ayatFrom}–${r.ayatTo} (${r.jumlahAyat}a)` : "";
+        let line = `   • ${hari}: ${ayatInfo}`;
+        if (r.nilai !== "-") line += ` ${nEmoji}${r.nilai}`;
+        if (r.status && r.status !== "Tidak Setoran") line += ` · ${sEmoji}${r.status}`;
+        lines.push(line);
+      });
+      if (s.tidakSetoran > 0) lines.push(`   • ❌ Tidak setoran: ${s.tidakSetoran}x`);
+    });
+    lines.push(``);
+  }
+
+  if (tidakPernah.length > 0) {
+    lines.push(`━━━━━━━━━━━━━━━━━━`);
+    lines.push(`❌ *TIDAK SETORAN SEPEKAN (${tidakPernah.length} siswa)*`);
+    lines.push(`━━━━━━━━━━━━━━━━━━`);
+    tidakPernah.forEach(s => lines.push(`• ${s.name}`));
+    lines.push(``);
+  }
+
+  if (belumSama.length > 0) {
+    lines.push(`━━━━━━━━━━━━━━━━━━`);
+    lines.push(`⏳ *BELUM ADA DATA (${belumSama.length} siswa)*`);
+    lines.push(`━━━━━━━━━━━━━━━━━━`);
+    belumSama.forEach(s => lines.push(`• ${s.name}`));
+    lines.push(``);
+  }
+
+  // Top 3
+  if (aktif.length >= 3) {
+    lines.push(`━━━━━━━━━━━━━━━━━━`);
+    lines.push(`🏆 *TOP 3 PEKAN INI*`);
+    lines.push(`━━━━━━━━━━━━━━━━━━`);
+    const medals = ["🥇","🥈","🥉"];
+    aktif.slice(0,3).forEach((s,i) => {
+      lines.push(`${medals[i]} ${s.name} — ${s.totalAyatS} ayat`);
+    });
+    lines.push(``);
+  }
+
+  lines.push(`Jazakumullah khairan atas perhatian dan dukungan Bapak/Ibu 🤲`);
+  lines.push(`Semoga putra-putrinya istiqomah dalam menghafal Al-Qur'an. Aamiin 🌟`);
+
+  const text = lines.join("\n");
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast("✅ Laporan pekanan berhasil dicopy!","success"))
+      .catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
 // ═══════════════════════════════════════════════════════════════
 (async () => {
   initForm();
