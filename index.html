@@ -1253,7 +1253,10 @@ function copyLaporanWA(date) {
 
   if (tidakSetoran.length > 0) {
     lines.push(`❌ *Tidak Setoran (${tidakSetoran.length} siswa):*`);
-    tidakSetoran.forEach(s => lines.push(`• ${s}`));
+    tidakSetoran.forEach(s => {
+      const r = dayRecs.find(r => r.student === s);
+      lines.push(`• ${s}${r?.catatan ? ` — _${r.catatan}_` : ""}`);
+    });
     lines.push(``);
   }
 
