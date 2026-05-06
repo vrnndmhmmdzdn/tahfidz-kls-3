@@ -878,7 +878,7 @@ function renderStudentGrid() {
   grid.innerHTML = "";
   const notToday = [];
   STUDENTS.forEach(s => {
-    const last = getLastRec(s);
+    const last = getLastRec(s, today);
     const done = records.find(r => r.student===s && r.tanggal===today);
     if (!done) notToday.push(s);
     const btn = document.createElement("button");
@@ -911,12 +911,16 @@ function renderStudentGrid() {
 // ═══════════════════════════════════════════════════════════════
 // STUDENT PICK & AUTO-FILL
 // ═══════════════════════════════════════════════════════════════
-function getLastRec(s) {
-  return [...records].filter(r=>r.student===s).sort((a,b)=>b.id-a.id)[0]||null;
+function getLastRec(s, beforeDate) {
+  return [...records]
+    .filter(r => r.student === s && (!beforeDate || r.tanggal < beforeDate))
+    .sort((a,b) => b.tanggal.localeCompare(a.tanggal) || b.id - a.id)[0] || null;
 }
 
-function getLastActualRec(s) {
-  return [...records].filter(r=>r.student===s&&r.status!=="Tidak Setoran").sort((a,b)=>b.id-a.id)[0]||null;
+function getLastActualRec(s, beforeDate) {
+  return [...records]
+    .filter(r => r.student === s && r.status !== "Tidak Setoran" && (!beforeDate || r.tanggal < beforeDate))
+    .sort((a,b) => b.tanggal.localeCompare(a.tanggal) || b.id - a.id)[0] || null;
 }
 
 function pickStudent(s) {
@@ -930,8 +934,9 @@ function pickStudent(s) {
   currentStudent = s;
   renderStudentGrid();
 
-  const lastActual = getLastActualRec(s);
-  const last = getLastRec(s);
+  const selectedDate = document.getElementById("inp-date").value || todayStr();
+  const lastActual = getLastActualRec(s, selectedDate);
+  const last = getLastRec(s, selectedDate);
   const autoInfo = document.getElementById("auto-info");
 
   // Default form
