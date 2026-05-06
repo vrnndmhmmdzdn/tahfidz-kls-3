@@ -324,6 +324,51 @@
   .conn-indicator.online .conn-dot { background: #4ade80; box-shadow: 0 0 0 2px rgba(74,222,128,0.3); }
   .conn-indicator.offline .conn-dot { background: #f87171; }
 
+  /* ── MOBILE RESPONSIVE ── */
+  @media (max-width: 480px) {
+    .header-inner { gap: 8px; }
+    .header-icon { font-size: 22px; }
+    .header-title { font-size: 14px; }
+    .header-sub { font-size: 10px; }
+    .header-count { padding: 4px 8px; }
+    .header-count .num { font-size: 16px; }
+    .conn-indicator span { display: none; }
+
+    .content { padding: 10px; padding-bottom: 28px; }
+    .card { padding: 12px; border-radius: 14px; }
+
+    .student-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .student-btn { padding: 8px 10px; font-size: 12px; }
+    .student-btn .s-pos { font-size: 9px; }
+
+    .btn-group { gap: 5px; }
+    .pill-btn { padding: 6px 10px; font-size: 11px; }
+
+    .ayat-row { grid-template-columns: 1fr 20px 1fr; gap: 6px; }
+
+    .filter-bar { flex-wrap: wrap; }
+    .filter-bar .select { min-width: 120px; }
+
+    .week-label { font-size: 11px; }
+
+    .lap-card { padding: 10px; }
+    .lap-name { font-size: 13px; }
+    .day-grid { gap: 4px; }
+    .day-cell { width: 30px; height: 30px; font-size: 11px; }
+    .day-cell-label { font-size: 9px; }
+    .day-detail { font-size: 11px; gap: 4px; }
+
+    .overview-grid { grid-template-columns: 1fr 1fr; }
+    .ov-num { font-size: 28px; }
+
+    .podium { gap: 8px; }
+    .podium-card { padding: 12px 8px; min-width: 80px; }
+    .podium-name { font-size: 11px; }
+
+    .copy-wa-btn { font-size: 13px; padding: 12px; }
+    .export-btn { font-size: 13px; padding: 12px; }
+  }
+
   /* Hidden */
   .hidden { display: none !important; }
 
@@ -1195,17 +1240,13 @@ function copyLaporanWA(date) {
     lines.push(`✅ *Setoran (${hadir.length}/${STUDENTS.length} siswa):*`);
     hadir.forEach((s, i) => {
       const r = dayRecs.find(r => r.student === s);
-      const ayatInfo = r.surah !== "-"
-        ? `${r.surah} : ${r.ayatFrom}–${r.ayatTo} (${r.jumlahAyat} ayat)`
-        : "";
       const nEmoji = nilaiEmoji(r.nilai);
       const sEmoji = statusEmoji(r.status);
-      let line = `${i+1}. *${s}*`;
-      if (ayatInfo) line += ` — ${ayatInfo}`;
-      line += ` | ${sEmoji} ${r.status}`;
-      if (r.nilai !== "-") line += ` | ${nEmoji} ${r.nilai}`;
-      if (r.catatan) line += `\n    📝 _${r.catatan}_`;
-      lines.push(line);
+      lines.push(``);
+      lines.push(`${i+1}. *${s}*`);
+      if (r.surah !== "-") lines.push(`   📖 ${r.surah} : ${r.ayatFrom}–${r.ayatTo} (${r.jumlahAyat} ayat)`);
+      lines.push(`   ${sEmoji} ${r.status}${r.nilai !== "-" ? `  ${nEmoji} ${r.nilai}` : ""}`);
+      if (r.catatan) lines.push(`   📝 _${r.catatan}_`);
     });
     lines.push(``);
   }
@@ -1523,11 +1564,13 @@ function copyLaporanPekananWA() {
       s.detailHari.forEach(({hari, r}) => {
         const nEmoji = nilaiEmoji(r.nilai);
         const sEmoji = statusEmoji(r.status);
-        const ayatInfo = r.surah !== "-" ? `${r.surah} ${r.ayatFrom}–${r.ayatTo} (${r.jumlahAyat}a)` : "";
-        let line = `   • ${hari}: ${ayatInfo}`;
-        if (r.nilai !== "-") line += ` ${nEmoji}${r.nilai}`;
-        if (r.status && r.status !== "Tidak Setoran") line += ` · ${sEmoji}${r.status}`;
-        lines.push(line);
+        if (r.surah !== "-") {
+          lines.push(`   • *${hari}* — ${r.surah} : ${r.ayatFrom}–${r.ayatTo} (${r.jumlahAyat} ayat)`);
+          lines.push(`     ${sEmoji} ${r.status}${r.nilai !== "-" ? `  ${nEmoji} ${r.nilai}` : ""}`);
+        } else {
+          lines.push(`   • *${hari}* — ${sEmoji} ${r.status}`);
+        }
+        if (r.catatan) lines.push(`     📝 _${r.catatan}_`);
       });
       if (s.tidakSetoran > 0) lines.push(`   • ❌ Tidak setoran: ${s.tidakSetoran}x`);
     });
