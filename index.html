@@ -892,7 +892,6 @@ function renderStudentGrid() {
 
     const done = records.find(r => r.student===s && r.tanggal===today);
     if (!done) notToday.push(s);
-    if (!done) notToday.push(s);
     let posLabel = "–";
     if (last) {
       if (last.status === "Ulang") {
